@@ -1,0 +1,10 @@
+asn1crypto
+cffi
+cryptography
+iniherit
+psycopg2
+pycparser
+PyMySQL
+six
+text-unidecode
+yoyo-migrations
