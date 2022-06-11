@@ -69,6 +69,11 @@ class CommonUtilsMethods:
             logger.info(f"Query in queue: {json.dumps(query_list, indent=4)}")
         else:
             file_list = self.get_query_file_list(QueryFolderStructure.TABLE_FOLDER)
+            file_list.extend(self.get_query_file_list(QueryFolderStructure.INDEX_FOLDER))
+            file_list.extend(self.get_query_file_list(QueryFolderStructure.VIEW_FOLDER))
+            file_list.extend(self.get_query_file_list(QueryFolderStructure.FUNCTION_FOLDER))
+            file_list.extend(self.get_query_file_list(QueryFolderStructure.STORED_PROCEDURE_FOLDER))
+            file_list.extend(self.get_query_file_list(QueryFolderStructure.REFERENCE_DATA_FOLDER))
             file_list.extend(self.get_query_file_list(QueryFolderStructure.CUSTOM_FOLDER))
             query_list = [(os.path.basename(file), self.open_file(file).format(**config_data)) for file in file_list]
             query_list = self.semi_colon_validator(query_list)

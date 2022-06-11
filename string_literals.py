@@ -41,10 +41,10 @@ class SQLConstants:
         :return: None
         """
     VERSION_ID = uuid4()
-    COUNT_LATEST_VERSION = "SELECT count(*) as count FROM db_name.latest_version;"
-    GET_LATEST_VERSION = "SELECT version_number, version_id FROM db_name.latest_version;"
-    INSERT_LATEST_VERSION = f"INSERT INTO db_name.latest_version (version_id) VALUES ('{VERSION_ID}');"
-    UPDATE_LATEST_VERSION = f"UPDATE db_name.latest_version set version_number = %(version_number)s, " \
+    COUNT_LATEST_VERSION = "SELECT count(*) as count FROM db_name._latest_version;"
+    GET_LATEST_VERSION = "SELECT version_number, version_id FROM db_name._latest_version;"
+    INSERT_LATEST_VERSION = f"INSERT INTO db_name._latest_version (version_id) VALUES ('{VERSION_ID}');"
+    UPDATE_LATEST_VERSION = f"UPDATE db_name._latest_version set version_number = %(version_number)s, " \
                             f"version_id = '{VERSION_ID}'"
     CHECK_QUERY_UPDATES = "SELECT count(*) as count from _migration_version_log where version_id = %(version_id)s " \
                           "and status in ('SUCCESS', 'SKIPPED') and query = %(query)s;"
@@ -79,4 +79,9 @@ class QueryFolderStructure:
     QUERY_FOLDER = "sql_queries"
     SETUP_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "00_setup")
     TABLE_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "01_table")
-    CUSTOM_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "08_custom")
+    INDEX_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "02_index")
+    VIEW_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "03_view")
+    FUNCTION_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "04_function")
+    STORED_PROCEDURE_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "05_storedprocedure")
+    REFERENCE_DATA_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "06_referencedata")
+    CUSTOM_FOLDER = os.path.join(Constants.FILE_DIR, QUERY_FOLDER, "07_custom")
