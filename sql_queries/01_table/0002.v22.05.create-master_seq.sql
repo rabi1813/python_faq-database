@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS  `master_seq` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (`id`));
