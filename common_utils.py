@@ -2,13 +2,12 @@
 Common Utilities
 """
 import json
-
-import yaml
 import os
+import yaml
 from cryptography.fernet import Fernet
 
 from log_services import log_initializer
-from string_literals import Constants, QueryFolderStructure, ErrorMessages, SQLConstants
+from string_literals import Constants, QueryFolderStructure, ErrorMessages
 
 logger = log_initializer()
 
@@ -19,12 +18,22 @@ class CommonUtilsMethods:
     """
     @staticmethod
     def open_file(file_name):
-        with open(file_name, 'r') as file_data:
+        """
+        Read SQL Files and remove new lines
+        :param file_name: SQL File name
+        :return: SQL File content
+        """
+        with open(file_name, 'r', encoding="utf-8") as file_data:
             data = file_data.read().replace("\n", "")
         return data
 
     @staticmethod
     def semi_colon_validator(query_list):
+        """
+        Validates Semi-colon
+        :param query_list: List of queries
+        :return: Validated query list
+        """
         error_file = []
         for query in query_list:
             if ";" not in query[1]:
@@ -35,20 +44,31 @@ class CommonUtilsMethods:
             error_message = ErrorMessages.SEMI_COLON_MISSING.format(', '.join(error_file))
             logger.error(error_message)
             raise Exception(error_message)
-        elif len(error_file) > 1:
+        if len(error_file) > 1:
             error_message = ErrorMessages.SEMI_COLON_MISSING.format(', '.join(error_file))
             logger.error(error_message)
             raise Exception(error_message)
-        else:
-            return query_list
+        return query_list
 
     @staticmethod
     def get_query_file_list(folder):
-        file_list = [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(".sql")]
+        """
+        Fetch SQL file names from a folder
+        :param folder: Folder name
+        :return: List of file names
+        """
+        file_list = [os.path.join(folder, file)
+                     for file in os.listdir(folder)
+                     if file.endswith(".sql")]
         return file_list
 
     @staticmethod
     def query_splitter(query_list):
+        """
+        Split multiple queries into single queries
+        :param query_list: List of queries
+        :return: Query list
+        """
         final_list = []
         for item in query_list:
             queries = [(item[0], query + ";") for query in item[1].split(";") if query]
@@ -63,10 +83,12 @@ class CommonUtilsMethods:
         """
         if operation_type == "setup":
             file_list = self.get_query_file_list(QueryFolderStructure.SETUP_FOLDER)
-            query_list = [(os.path.basename(file), self.open_file(file).format(**config_data)) for file in file_list]
+            query_list = [(os.path.basename(file),
+                           self.open_file(file).format(**config_data))
+                          for file in file_list]
             query_list = self.semi_colon_validator(query_list)
             query_list = self.query_splitter(query_list)
-            logger.info(f"Query in queue: {json.dumps(query_list, indent=4)}")
+            logger.info("Query in queue: %s", json.dumps(query_list, indent=4))
         else:
             file_list = self.get_query_file_list(QueryFolderStructure.TABLE_FOLDER)
             file_list.extend(self.get_query_file_list(QueryFolderStructure.INDEX_FOLDER))
@@ -75,10 +97,12 @@ class CommonUtilsMethods:
             file_list.extend(self.get_query_file_list(QueryFolderStructure.STORED_PROCEDURE_FOLDER))
             file_list.extend(self.get_query_file_list(QueryFolderStructure.REFERENCE_DATA_FOLDER))
             file_list.extend(self.get_query_file_list(QueryFolderStructure.CUSTOM_FOLDER))
-            query_list = [(os.path.basename(file), self.open_file(file).format(**config_data)) for file in file_list]
+            query_list = [(os.path.basename(file),
+                           self.open_file(file).format(**config_data))
+                          for file in file_list]
             query_list = self.semi_colon_validator(query_list)
             query_list = self.query_splitter(query_list)
-            logger.info(f"Query in queue: {json.dumps(query_list, indent=4)}")
+            logger.info("Query in queue: %s", json.dumps(query_list, indent=4))
         return query_list
 
 
@@ -94,7 +118,7 @@ class SecurityMethods:
         Read Config File
         :return:Config Data
         """
-        with open(Constants.CONFIG_FILE, 'r') as config:
+        with open(Constants.CONFIG_FILE, 'r', encoding="utf-8") as config:
             config_details = yaml.load(config, Loader=yaml.FullLoader)
         return config_details
 
@@ -160,8 +184,10 @@ class SecurityMethods:
         :return:Decrypted config data
         """
         config_details = self.read_config_file()
-        config_details["db_password"] = self.decrypt_message(config_details, config_details["db_password"])
-        config_details["user_password"] = self.decrypt_message(config_details, config_details["user_password"])
+        config_details["db_password"] = self.decrypt_message(config_details,
+                                                             config_details["db_password"])
+        config_details["user_password"] = self.decrypt_message(config_details,
+                                                               config_details["user_password"])
         return config_details
 
 

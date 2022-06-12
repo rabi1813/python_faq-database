@@ -1,11 +1,11 @@
+"""
+SQL Operations
+"""
 import datetime
-import json
-import re
-
 import pymysql
 import pymysql.cursors
-import os
 from pymysql.constants import CLIENT
+
 from string_literals import SQLConstants, ErrorMessages
 from common_utils import SecurityMethods, CommonUtilsMethods
 from log_services import log_initializer
@@ -61,7 +61,6 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
         Creates MySQL Connector
         :return: MySQL Connector object
         """
-
         if self.config_data.get("cursor_type") == "dict":
             cursor_class = pymysql.cursors.DictCursor
         else:
@@ -80,14 +79,13 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
             return connection
         except pymysql.err.OperationalError as exp:
             logger.info(str(exp))
-            raise Exception
+            raise pymysql.err.OperationalError
 
     def mysql_connector(self):
         """
         Creates MySQL Connector
         :return: MySQL Connector object
         """
-
         if self.config_data.get("cursor_type") == "dict":
             cursor_class = pymysql.cursors.DictCursor
         else:
@@ -106,7 +104,7 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
             return connection
         except pymysql.err.OperationalError as exp:
             logger.info(str(exp))
-            raise Exception
+            raise pymysql.err.OperationalError
 
     def execute_query(self, connection, query, payload=None):
         """
@@ -120,9 +118,9 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
             with connection.cursor() as cursor:
                 if payload:
                     query_string = query.replace("%(", "'%(").replace(")s", ")s'") % payload
-                    logger.info('Querying SQL : ' + query_string)
+                    logger.info('Querying SQL : %s', query_string)
                 else:
-                    logger.info(f'Querying SQL : {query}')
+                    logger.info('Querying SQL : %s', query)
                 payload = payload if payload else {}
                 cursor.execute(query, payload)
                 sql_fetch = cursor.fetchall()
@@ -142,10 +140,6 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
             logger.error(str(exp))
             return False, str(exp)
 
-        except Exception as exp:
-            logger.error(str(exp))
-            return False, str(exp)
-
     @staticmethod
     def generate_null_mapper(cursor):
         """
@@ -157,33 +151,41 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
         return null_mapper
 
     def step_execution(self, connection, operation_type="common"):
+        """
+        Execute query steps
+        :param connection: MySQl connection
+        :param operation_type: setup/common
+        :return True/False
+        """
         query_list = common_object.step(operation_type=operation_type)
         count = 0
         for item in query_list:
-            try:
-
-                flag, result = self.execute_query(connection, item[1])
-                if operation_type != "setup":
-                    update_check = self.query_update_check(connection, item[1])
-                    if update_check == 0:
-                        self.migration_log_entry(connection, flag, item, result)
-                    else:
-                        self.migration_log_entry(connection, True, item, "SKIPPED")
-                count += 1
-            except Exception as exp:
-                logger.info(str(exp))
-                if operation_type != "setup":
-                    self.migration_log_entry(connection, False, item, str(exp))
-                raise Exception(str(exp))
+            flag, result = self.execute_query(connection, item[1])
+            if operation_type != "setup":
+                update_check = self.query_update_check(connection, item[1])
+                if update_check == 0:
+                    self.migration_log_entry(connection, flag, item, result)
+                else:
+                    self.migration_log_entry(connection, True, item, "SKIPPED")
+            count += 1
         if count == len(query_list):
             return True
+        return False
 
-    def migration_log_entry(self, connection, status_flag, item, error):
+    def migration_log_entry(self, connection, status_flag, query_tuple, error):
+        """
+        Function to insert log entries in log table
+        :param connection: MySQl connection
+        :param status_flag: True/False based on query execution
+        :param query_tuple: Query details
+        :param error: SKIPPED/Error message
+        :return None
+        """
         if error == "SKIPPED":
             version_payload = {
                 "version_id": SQLConstants.VERSION_ID,
-                "file_name": item[0],
-                "query": item[1],
+                "file_name": query_tuple[0],
+                "query": query_tuple[1],
                 "status": "SKIPPED",
                 "error": ""
             }
@@ -191,8 +193,8 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
         elif status_flag:
             version_payload = {
                 "version_id": SQLConstants.VERSION_ID,
-                "file_name": item[0],
-                "query": item[1],
+                "file_name": query_tuple[0],
+                "query": query_tuple[1],
                 "status": "SUCCESS",
                 "error": ""
             }
@@ -200,51 +202,77 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
         else:
             version_payload = {
                 "version_id": SQLConstants.VERSION_ID,
-                "file_name": item[0],
-                "query": item[1],
+                "file_name": query_tuple[0],
+                "query": query_tuple[1],
                 "status": "ERROR",
                 "error": error
             }
             self.execute_query(connection, SQLConstants.VERSION_CONTROL, version_payload)
 
-    def version_operations(self, connection, query_type):
-        if query_type == "version_id":
-            query = SQLConstants.GET_LATEST_VERSION.replace("db_name", self.config_data.get("db_name"))
+    def get_version_details(self, connection):
+        """
+        Get Version_number and Version_id
+        :param connection: MySQl connection
+        :return Version_number and Version_id
+        """
+        query = SQLConstants.GET_LATEST_VERSION.replace("db_name",
+                                                        self.config_data.get("db_name"))
+        flag, result = self.execute_query(connection, query)
+        if flag:
+            return result[0]
+        logger.error(result)
+        raise Exception(result)
+
+    def get_version_row_count(self, connection):
+        """
+        Get RowCount of Version table
+        :param connection: MySQl connection
+        :return RowCount of Version table
+        """
+        query = SQLConstants.COUNT_LATEST_VERSION.replace("db_name",
+                                                          self.config_data.get("db_name"))
+        flag, result = self.execute_query(connection, query)
+        if flag:
+            return result[0]["count"]
+        logger.error(result)
+        raise Exception(result)
+
+    def update_version(self, connection):
+        """
+        Insert/Update Version ID in Version table
+        :param connection: MySQl connection
+        :return None
+        """
+        logger.info("Updating Migration Version")
+        count = self.get_version_row_count(connection)
+        if count == 0:
+            query = SQLConstants.INSERT_LATEST_VERSION.replace("db_name",
+                                                               self.config_data.get("db_name"))
             flag, result = self.execute_query(connection, query)
-            if flag:
-                return result[0]
-            else:
+            if flag is False:
                 logger.error(result)
                 raise Exception(result)
-        elif query_type == "count":
-            query = SQLConstants.COUNT_LATEST_VERSION.replace("db_name", self.config_data.get("db_name"))
-            flag, result = self.execute_query(connection, query)
-            if flag:
-                return result[0]["count"]
-            else:
+        else:
+            version_number = self.get_version_details(connection)["version_number"]
+            version_number += 1
+            payload = {
+                "version_number": version_number
+            }
+            query = SQLConstants.UPDATE_LATEST_VERSION.replace("db_name",
+                                                               self.config_data.get("db_name"))
+            flag, result = self.execute_query(connection, query, payload)
+            if flag is False:
                 logger.error(result)
                 raise Exception(result)
-        elif query_type == "update":
-            count = self.version_operations(connection, query_type="count")
-            if count == 0:
-                query = SQLConstants.INSERT_LATEST_VERSION.replace("db_name", self.config_data.get("db_name"))
-                flag, result = self.execute_query(connection, query)
-                if flag is False:
-                    logger.error(result)
-                    raise Exception(result)
-            else:
-                version_number = self.version_operations(connection, query_type="version_id")["version_number"] + 1
-                payload = {
-                    "version_number": version_number
-                }
-                query = SQLConstants.UPDATE_LATEST_VERSION.replace("db_name", self.config_data.get("db_name"))
-                flag, result = self.execute_query(connection, query, payload)
-                if flag is False:
-                    logger.error(result)
-                    raise Exception(result)
 
     def query_update_check(self, connection, query):
-        version_id = self.version_operations(connection, query_type="version_id")["version_id"]
+        """
+        Function to check if there is any change in SQL files.
+        :param connection: MySQl connection
+        :param query: Query that needs to be validated.
+        :return Match Count
+        """
+        version_id = self.get_version_details(connection)["version_id"]
         payload = {
             "version_id": version_id,
             "query": query
@@ -252,6 +280,5 @@ class SQLMethods(SQLUtilityMethods, SQLConstants, ErrorMessages):
         flag, result = self.execute_query(connection, SQLConstants.CHECK_QUERY_UPDATES, payload)
         if flag:
             return result[0]["count"]
-        else:
-            logger.error(result)
-            raise Exception(result)
+        logger.error(result)
+        raise Exception(result)
