@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS  `master` (
+CREATE TABLE IF NOT EXISTS  `query` (
     `id` INT NOT NULL AUTO_INCREMENT,
-    `master_id` VARCHAR(45) NOT NULL,
+    `query_id` VARCHAR(45) NOT NULL,
     `type` VARCHAR(45),
     `query` VARCHAR(500),
     `answer` VARCHAR(500),
@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS  `master` (
     `create_by` VARCHAR(50),
     `mod_datetime` TIMESTAMP,
     `mod_by` VARCHAR(50),
-    PRIMARY KEY (`id`, `master_id`));
+    PRIMARY KEY (`id`, `query_id`));
