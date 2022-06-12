@@ -14,5 +14,5 @@ if __name__ == "__main__":
     if FLAG:
         connection = sql_obj.mysql_connector()
         sql_obj.step_execution(connection)
-        sql_obj.update_version(connection)
+    sql_obj.update_version(master_connection)
     logger.info("Migration Complete")
