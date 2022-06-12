@@ -4,6 +4,8 @@ Main Deployment file
 from log_services import log_initializer
 from sql_operations import SQLMethods
 
+import sys
+
 logger = log_initializer()
 
 sql_obj = SQLMethods()
@@ -16,3 +18,4 @@ if __name__ == "__main__":
         sql_obj.step_execution(connection)
     sql_obj.update_version(master_connection)
     logger.info("Migration Complete")
+    # print(sys.argv)
