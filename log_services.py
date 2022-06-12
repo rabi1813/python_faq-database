@@ -1,3 +1,6 @@
+"""
+Code to initialize logger
+"""
 import logging
 
 
