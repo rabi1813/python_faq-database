@@ -37,5 +37,6 @@ db_host = config['DEFAULT']["DB_HOST"]
 db_name = config['DEFAULT']["DB_NAME"]
 db_user = config['DEFAULT']["DB_USER_NAME"]
 db_password = decrypt_message(config['DEFAULT']['DB_PASSWORD'])
+user_password = decrypt_message(config['DEFAULT']['USER_PASSWORD'])
 path_query_file = 'queries.txt'
 path_db_scripts = 'sqlscripts'

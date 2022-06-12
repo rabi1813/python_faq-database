@@ -1,7 +1,7 @@
 from yoyo import step
 
 step(
-    """CREATE TABLE `master` (
+    """CREATE TABLE `approval_table` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `master_id` VARCHAR(45) NOT NULL,
     `type` VARCHAR(45),
