@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS  `query` (
+CREATE TABLE IF NOT EXISTS  `pre_approval_table` (
     `id` INT NOT NULL AUTO_INCREMENT,
-    `query_id` VARCHAR(45) NOT NULL,
+    `pre_approval_id` VARCHAR(45) NOT NULL,
     `type` VARCHAR(45),
     `query` VARCHAR(500),
     `answer` VARCHAR(500),
@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS  `query` (
     `create_by` VARCHAR(50),
     `mod_datetime` TIMESTAMP,
     `mod_by` VARCHAR(50),
-    PRIMARY KEY (`id`, `query_id`));
+    PRIMARY KEY (`id`, `pre_approval_id`));
